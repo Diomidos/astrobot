@@ -4,4 +4,4 @@ node_modules/
 debug.log*
 dist/
 coverage/
-index.js
+.index.js
