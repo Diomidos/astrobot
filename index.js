@@ -41,7 +41,7 @@ function buildCalendarKeyboard(dates, type = 'consult') {
 // bot.telegram.setMyCommands([
 //     { command: 'start', description: 'Запуск Бота ' },
 //     { command: 'help', description: 'Помощь' },
-//     { command: 'consult', description: 'Записаться на консультацию' },
+//     { command: 'consult', description: 'Знакомство с экспертом' },
 //     { command: 'constellation', description: 'Записаться на расстановку' }
 // ]).catch(() => { });
 
@@ -51,22 +51,20 @@ bot.start(async (ctx) => {
         const name = user.username ? `@${user.username}` : (user.first_name || 'друг');
 
         // Greeting text
-        const welcomeText = `Здравствуй, ${name}! Здесь ты найдешь ответы на свои вопросы.
-Для того, чтобы понять твое это поле или нет, нужно пообщаться. Достаточно 15 минут, чтобы почувствовать человека.
-Если тебе это нужно, выбери  "Знакомство - Общение"
-Когда же ты с уверенностью готов к индивидуальной расстановке, выбирай "Запись на расстановку". Она может проходить в двух форматах:
-Индивидуальная, тет а тет
-И
-Групповая, с участием заместителей
+        const welcomeText = `Здравствуй, ${name}! Вас приветствует онлайн-администратор Регины Привозиной.
+
+Регина Привозина — профессиональный расстановщик, психолог и мастер работы с подсознанием. Она помогает клиентам находить глубинныe причины проблем и принимать решения, ведущие к гармонии.
+
+Мы понимаем, что выбор метода работы — ответственный шаг. Поэтому предлагаем начать с короткой 15-минутной беседы, чтобы вы могли лично пообщаться с Региной, задать вопросы и понять, будет ли полезна вам эта работа.
 
 С уважением 
 Регина Привозина, расстановщик, психолог, мастер подсознания.`;
 
         // Inline keyboard (buttons attached to the message so they always visible)
         const inlineMenu = Markup.inlineKeyboard([
-            [Markup.button.callback('Рассылка анонсов ближайших встреч', 'open_broadcast')],
-            [Markup.button.callback('Записаться на консультацию', 'open_consult')],
-            [Markup.button.callback('Записаться на расстановку', 'open_constellation')]
+            [Markup.button.callback('Знакомство с экспертом', 'open_consult')],
+            [Markup.button.callback('Записаться на расстановку', 'open_constellation')],
+            [Markup.button.url('Перейти в ТГ канал', 'https://t.me/Regina_Privozina')],
         ]);
 
         // Send welcome text first with inline menu
@@ -79,7 +77,7 @@ bot.start(async (ctx) => {
 
     } catch (err) {
         console.error('Error in start handler:', err);
-        await ctx.reply('Произошла ошибка при отправке приветствия. Попробуйте позже.');
+        await ctx.reply('Произошла непредвиденная ошибка, сори  :). Попробуйте позже.');
     }
 });
 
@@ -102,7 +100,7 @@ bot.action('broadcast_yes', async (ctx) => {
 
 bot.action('broadcast_no', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply('Если передумаете, нажмите на кнопку "Рассылка анонсов ближайших встреч"');
+    await ctx.reply('Если передумаете, нажмите на кнопку "Анонс ближайших встреч"');
 });
 
 // removed reply-keyboard dependent hears handler for consult; will use inline actions below
@@ -116,16 +114,46 @@ bot.action('open_broadcast', async (ctx) => {
     ]));
 });
 
+// When user wants to meet the expert — show Yes/No alert
 bot.action('open_consult', async (ctx) => {
     await ctx.answerCbQuery();
-    const keyboard = buildCalendarKeyboard(AVAILABLE_DATES, 'consult');
-    await ctx.reply('Доступные даты:\nВыберите удобную дату для консультации:', keyboard);
+    await ctx.reply('Перейти в чат с экспертом?', Markup.inlineKeyboard([
+        Markup.button.callback('ДА', 'consult_chat_yes'),
+        Markup.button.callback('НЕТ', 'consult_chat_no')
+    ]));
 });
 
+// When user wants to book a constellation — show Yes/No alert
 bot.action('open_constellation', async (ctx) => {
+    await ctx.answerCbQuery(`📞 Запись к эксперту\n\nВы действительно хотите перейти в чат с экспертом для записи на консультацию?`, {
+        show_alert: true
+    });
+
+    await ctx.reply('Подтвердите ваш выбор:', Markup.inlineKeyboard([
+        Markup.button.callback('✅ ДА', 'constel_chat_yes'),
+        Markup.button.callback('❌ НЕТ', 'constel_chat_no')
+    ]));
+});
+
+// Handlers for consult Yes/No
+bot.action('consult_chat_yes', async (ctx) => {
     await ctx.answerCbQuery();
-    const keyboard = buildCalendarKeyboard(AVAILABLE_DATES, 'constellation');
-    await ctx.reply('Доступные даты:\nВыберите удобную дату для расстановки:', keyboard);
+    // send link or instruction to open chat
+    await ctx.reply('Перейдите в чат с экспертом: https://t.me/Regina_Privozina');
+});
+bot.action('consult_chat_no', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('Отмена. Если передумаете, нажмите кнопку "Знакомство с экспертом".');
+});
+
+// Handlers for constellation Yes/No
+bot.action('constel_chat_yes', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('Перейдите для записи в чат с экспертом: https://t.me/Regina_Privozina');
+});
+bot.action('constel_chat_no', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('Отмена. Если передумаете, нажмите кнопку "Записаться на расстановку".');
 });
 
 // Close calendar
